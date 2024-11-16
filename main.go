@@ -1,11 +1,13 @@
 package main
  
 import (
+  "context"
   "fmt"
   "log"
   "os"
 
   "github.com/gofiber/fiber/v2"
+  "github.com/jackc/pgx/v5"
   "github.com/joho/godotenv"
 )
 
@@ -16,31 +18,53 @@ type SiFloor struct {
 }
 
 func main() {
-  app := fiber.New()
-
-  err := godotenv.Load()
-  if err != nil {
+  errGoDotEnv := godotenv.Load()
+  if errGoDotEnv != nil {
     log.Fatal("Error loading .env file")
   }
+
+  conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+  if err != nil {
+  	fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+  	os.Exit(1)
+  }
+  defer conn.Close(context.Background())
+
+  var greeting string
+  err = conn.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
+  if err != nil {
+  	fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+  	os.Exit(1)
+  }
+
+  fmt.Println(greeting)
+
+  app := fiber.New()
 
   PORT := os.Getenv("PORT")
 
   siFloors := []SiFloor{}
 
+  app.Get("/", getHome)
+
+  app.Get("/api/sifloor", getSiFloors)
+
+  app.Post("/api/sifloor", createSiFloor)
+
   // Index route
-  app.Get("/", func(c *fiber.Ctx) error {
+  func getHome(c *fiber.Ctx) error {
     return c.Status(200).JSON(fiber.Map{"msg": "Welcome to  SiLife!"})
-  })
+  }
 
   // Get all Si-Floors
-  app.Get("/api/sifloor", func(c *fiber.Ctx) error {
+  func getSiFloors(c *fiber.Ctx) error {
     return c.JSON(siFloors)
-  })
+  }
 
   // Create a new Si-Floor
-  app.Post("/api/sifloor", func(c *fiber.Ctx) error {
+  func createSiFloor(c *fiber.Ctx) error {
     siFloor := &SiFloor{}
-  
+
 
     if err := c.BodyParser(siFloor); err != nil {
       return err
@@ -54,7 +78,7 @@ func main() {
     siFloors = append(siFloors, *siFloor)
 
     return c.Status(201).JSON(siFloor)
-  })
+  }
 
   // Start the server, else log errors
   log.Fatal(app.Listen(":" + PORT))
