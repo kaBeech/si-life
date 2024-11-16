@@ -1,6 +1,8 @@
 package main
  
 import (
+  "fmt"
+
   "net/http"
 
   "github.com/gin-gonic/gin"
@@ -23,4 +25,5 @@ func main() {
  
   // Start the server
   router.Run(":8080")
+  fmt.Println("Server running on port " + port)
 }
