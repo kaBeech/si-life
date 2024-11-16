@@ -3,8 +3,10 @@ package main
 import (
   "fmt"
   "log"
+  "os"
 
   "github.com/gofiber/fiber/v2"
+  "github.com/joho/godotenv"
 )
 
 type SiFloor struct {
@@ -16,6 +18,13 @@ type SiFloor struct {
 func main() {
   app := fiber.New()
 
+  err := godotenv.Load()
+  if err != nil {
+    log.Fatal("Error loading .env file")
+  }
+
+  PORT := os.Getenv("PORT")
+
   siFloors := []SiFloor{}
 
   // Index route
@@ -26,7 +35,7 @@ func main() {
   // Get all Si-Floors
   app.Get("/api/sifloor", func(c *fiber.Ctx) error {
     return c.JSON(siFloors)
-  }
+  })
 
   // Create a new Si-Floor
   app.Post("/api/sifloor", func(c *fiber.Ctx) error {
@@ -48,6 +57,6 @@ func main() {
   })
 
   // Start the server, else log errors
-  log.Fatal(app.Listen(":4000"))
+  log.Fatal(app.Listen(":" + PORT))
   fmt.Println("Server running on port 4000")
 }
