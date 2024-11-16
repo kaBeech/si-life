@@ -2,28 +2,27 @@ package main
  
 import (
   "fmt"
+  "log"
 
-  "net/http"
-
-  "github.com/gin-gonic/gin"
+  "github.com/gofiber/fiber/v2"
 )
  
 func main() {
-  router := gin.Default()
+  app := fiber.New()
+ // 
+ //  // Create API route group
+ //  api := router.Group("/api")
+ //  {
+ //    // Add routes and define route handler functions
+ //    api.GET("/si-life", func(ctx *gin.Context) {
+ //      ctx.JSON(200, gin.H{"msg": "Welcome to Si-Life!"})
+ //    })
+ //  }
+ // 
+ //  // Handle 404s
+ //  router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
  
-  // Create API route group
-  api := router.Group("/api")
-  {
-    // Add routes and define route handler functions
-    api.GET("/si-life", func(ctx *gin.Context) {
-      ctx.JSON(200, gin.H{"msg": "Welcome to Si-Life!"})
-    })
-  }
- 
-  // Handle 404s
-  router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
- 
-  // Start the server
-  router.Run(":8080")
-  fmt.Println("Server running on port " + port)
+  // Start the server, else log errors
+  log.Fatal(app.Listen(":4000"))
+  fmt.Println("Server running on port 4000")
 }
