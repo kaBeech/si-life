@@ -1,21 +1,25 @@
 package main
  
 import (
-  "context"
+  // "context"
   "fmt"
   "log"
   "os"
 
   "github.com/gofiber/fiber/v2"
-  "github.com/jackc/pgx/v5"
   "github.com/joho/godotenv"
+  "gorm.io/driver/postgres"
+  "gorm.io/gorm"
 )
 
 type SiFloor struct {
+  gorm.Model
   ID      int    `json:"id"`
   Height  int    `json:"height"`
   Width   int    `json:"width"`
 }
+
+var db *gorm.DB
 
 func main() {
   errGoDotEnv := godotenv.Load()
@@ -23,46 +27,28 @@ func main() {
     log.Fatal("Error loading .env file")
   }
 
-  conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-  if err != nil {
-  	fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-  	os.Exit(1)
-  }
-  defer conn.Close(context.Background())
+  PORT := os.Getenv("PORT")
+  DB_URL := os.Getenv("DB_URL")
 
-  var greeting string
-  err = conn.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
+  dsn := DB_URL
+  db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
   if err != nil {
-  	fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-  	os.Exit(1)
+    panic("failed to connect database")
   }
 
-  fmt.Println(greeting)
+  // Migrate the schema
+  db.AutoMigrate(&SiFloor{})
+
+  fmt.Println("Welcome to SiLife!")
 
   app := fiber.New()
 
-  PORT := os.Getenv("PORT")
-
-  siFloors := []SiFloor{}
-
+  // Index route
   app.Get("/", getHome)
 
-  app.Get("/api/sifloor", getSiFloors)
-
-  app.Post("/api/sifloor", createSiFloor)
-
-  // Index route
-  func getHome(c *fiber.Ctx) error {
-    return c.Status(200).JSON(fiber.Map{"msg": "Welcome to  SiLife!"})
-  }
-
-  // Get all Si-Floors
-  func getSiFloors(c *fiber.Ctx) error {
-    return c.JSON(siFloors)
-  }
-
   // Create a new Si-Floor
-  func createSiFloor(c *fiber.Ctx) error {
+  app.Post("/api/sifloor", func(c *fiber.Ctx) error {
     siFloor := &SiFloor{}
 
 
@@ -70,17 +56,56 @@ func main() {
       return err
     }
 
-    if siFloor.Height == 0 || siFloor.Width == 0 {
-      return c.Status(400).JSON(fiber.Map{"error": "Height and Width are required"})
+    if siFloor.Height < 1 || siFloor.Width < 1 {
+      return c.Status(400).JSON(fiber.Map{"error": "Height and Width must be greater than 0"})
     }
+    db.Create(&SiFloor{Height: siFloor.Height, Width: siFloor.Width})
+    return c.Status(201).JSON(fiber.Map{"msg": "SiFloor created successfully"})
+  })
 
-    siFloor.ID = len(siFloors) + 1
-    siFloors = append(siFloors, *siFloor)
+  // Count SiFloors
+  app.Get("/api/sifloor", func(c *fiber.Ctx) error {
+    result := db.Find(&siFloor)
 
-    return c.Status(201).JSON(siFloor)
-  }
+    if result.Error != nil {
+      panic("failed to list SiFloors")
+    }
+    message := "There are " + fmt.Sprint(result.RowsAffected) + " SiFloors currently in the database"
+    return c.Status(200).JSON(fiber.Map{"msg": message})
+  })
+
+  // Get a SiFloor by ID
+  app.Get("/api/sifloor/:id", func(c *fiber.Ctx) error {
+    id := c.Params("id")
+    var siFloor SiFloor
+    db.First(&siFloor, id)
+    // db.First(&siFloor, "height = ?", 10) // find SiFloor with height 10
+    return c.Status(200).JSON(siFloor)
+  })
+
+  // Update a SiFloor
+  app.Put("/api/sifloor/:id", func(c *fiber.Ctx) error {
+    id := c.Params("id")
+    var siFloor SiFloor
+    db.First(&siFloor, id)
+    db.Model(&siFloor).Updates(SiFloor{Height: 20, Width: 20}) // non-zero fields
+    return c.Status(200).JSON(fiber.Map{"msg": "SiFloor updated successfully"})
+  })
+
+  // Delete a SiFloor
+  app.Delete("/api/sifloor/:id", func(c *fiber.Ctx) error {
+    id := c.Params("id")
+    var siFloor SiFloor
+    db.First(&siFloor, id)
+    db.Delete(&siFloor)
+    return c.Status(200).JSON(fiber.Map{"msg": "SiFloor deleted successfully"})
+  })
 
   // Start the server, else log errors
   log.Fatal(app.Listen(":" + PORT))
   fmt.Println("Server running on port 4000")
+}
+
+func getHome(c *fiber.Ctx) error {
+  return c.Status(200).JSON(fiber.Map{"msg": "Welcome to  SiLife!"})
 }
