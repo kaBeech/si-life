@@ -23,6 +23,11 @@ func main() {
     return c.Status(200).JSON(fiber.Map{"msg": "Welcome to  SiLife!"})
   })
 
+  // Get all Si-Floors
+  app.Get("/api/sifloor", func(c *fiber.Ctx) error {
+    return c.JSON(siFloors)
+  }
+
   // Create a new Si-Floor
   app.Post("/api/sifloor", func(c *fiber.Ctx) error {
     siFloor := &SiFloor{}
