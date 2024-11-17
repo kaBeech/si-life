@@ -1,5 +1,6 @@
 import './App.css'
 import Header from "./components/Header"
+import SiFloorForm from './components/SiFloorForm'
 
 function App() {
 
@@ -7,6 +8,7 @@ function App() {
     <>
       <Header />
       <h1>Hello, world!</h1>
+      <SiFloorForm />
     </>
   )
 }
