@@ -7,7 +7,7 @@ function App() {
   const [count, setCount] = useState(0)
 
   const handleLogin = async () => {
-    window.location.href = 'http://localhost:4000/auth/github'
+    window.location.href = 'http://127.0.0.1:4000/auth/github'
   }
   return (
     <>

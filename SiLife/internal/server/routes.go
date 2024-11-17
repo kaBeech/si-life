@@ -1,7 +1,11 @@
 package server
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/shareed2k/goth_fiber"
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
@@ -11,7 +15,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 
 	s.App.Get("/auth/:provider/callback", s.getAuthCallbackFunction)
 	s.App.Get("/logout/:provider", s.getAuthLogoutFunction)
-	s.App.Get("/auth/:provider", s.getAuthHandler)
+	s.App.Get("/auth/:provider", goth_fiber.BeginAuthHandler)
 }
 
 func (s *FiberServer) HelloWorldHandler(c *fiber.Ctx) error {
@@ -27,34 +31,34 @@ func (s *FiberServer) healthHandler(c *fiber.Ctx) error {
 }
 
 func (s *FiberServer) getAuthCallbackFunction(c *fiber.Ctx) error {
-	provider, err := c.Params("provider")
-	c.WithContext(context.WithValue(context.Background(), "provider", provider))
+	provider := c.Params("provider")
+	context.Background().Value(provider)
 
-	user, err := gothic.CompleteUserAuth(c)
+	user, err := goth_fiber.CompleteUserAuth(c)
 	if err != nil {
 		fmt.Fprintln(c, err)
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	fmt.Println(user)
-	http.Redirect(c, c.Request(), "http://localhost:5173", http.StatusFound)
+	return c.Redirect("http://127.0.0.1:5173", fiber.StatusTemporaryRedirect)
 }
 
 func (s *FiberServer) getAuthLogoutFunction(c *fiber.Ctx) error {
-	provider, err := c.Params("provider")
-	c.WithContext(context.WithValue(context.Background(), "provider", provider))
+	provider := c.Params("provider")
+	context.Background().Value(provider)
 
-	gothic.Logout(c)
-	http.Redirect(c, c.Request(), "http://localhost:5173", http.StatusFound)
+	goth_fiber.Logout(c)
+	return c.Redirect("http://127.0.0.1:5173", fiber.StatusTemporaryRedirect)
 }
 
-func (s *FiberServer) getAuthHandler(c *fiber.Ctx) error {
-	provider, err := c.Params("provider")
-	c.WithContext(context.WithValue(context.Background(), "provider", provider))
-
-	// Try to get the user without re-authenticating
-	if user, err := gothic.CompleteUserAuth(c); err == nil {
-		c.JSON(user)
-	} else {
-		gothic.BeginAuthHandler(c)
-	}
-}
+// func (s *FiberServer) getAuthHandler(c *fiber.Ctx) error {
+// 	provider := c.Params("provider")
+// 	context.Background().Value(provider)
+//
+// 	// Try to get the user without re-authenticating
+// 	if user, err := goth_fiber.CompleteUserAuth(c); err == nil {
+// 		c.JSON(user)
+// 	} else {
+// 		goth_fiber.BeginAuthHandler(c)
+// 	}
+// }
