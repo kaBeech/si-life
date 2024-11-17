@@ -1,1 +1,5 @@
-export type SiFloor = any;
+export interface SiFloor {
+  id: number;
+  height: number;
+  width: number;
+}
