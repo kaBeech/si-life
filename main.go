@@ -23,6 +23,14 @@ type SiFloor struct {
 var db *gorm.DB
 
 func main() {
+  // Create a new Fiber instance
+  app := fiber.New()
+
+  // app.Use(cors.New(cors.Config{
+  //   AllowOrigins: "http://localhost:5173",
+  //   AllowHeaders: "Origin, Content-Type, Accept",
+  // }))
+
   // Load environment variables
   if os.Getenv("ENV") == "prod" {
     app.Static("/", "./client/dist")
@@ -47,19 +55,8 @@ func main() {
   db.AutoMigrate(&SiFloor{})
 
   // Seed the database
-  var initSiFloor SiFloor
-  db.First(&initSiFloor, 1)
-  if (initSiFloor.Error != nil) {
-    db.Create(&SiFloor{Height: 25, Width: 25})
-  }
-
-  // Create a new Fiber instance
-  app := fiber.New()
-
-  // app.Use(cors.New(cors.Config{
-  //   AllowOrigins: "http://localhost:5173",
-  //   AllowHeaders: "Origin, Content-Type, Accept",
-  // }))
+  // TODO: Use a better long-term solution
+  db.Create(&SiFloor{Height: 25, Width: 25})
 
   // Routes
   app.Get("/", getHome)
