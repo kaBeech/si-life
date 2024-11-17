@@ -2,6 +2,7 @@ package main
 
 import (
 	"SiLife/internal/server"
+	"SiLife/internal/auth"
 	"context"
 	"fmt"
 	"log"
@@ -40,6 +41,7 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 
 func main() {
 
+	auth.NewAuth()
 	server := server.New()
 
 	server.RegisterFiberRoutes()
