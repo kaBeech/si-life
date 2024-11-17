@@ -1,13 +1,14 @@
+import { BASE_URL } from "../App";
 import { SiFloor } from "../types";
 import SiFloorPreview from "./SiFloorPreview";
 import { useQuery } from "@tanstack/react-query";
 
 export default () => {
-  const { data: siFloors, isLoading } = useQuery<SiFloor[]>({
+  const { data: siFloor, isLoading } = useQuery<SiFloor>({
     queryKey: ["siFloors"],
     queryFn: async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/siFloors");
+        const res = await fetch(BASE_URL + "/sifloor/1");
         const data = await res.json();
 
         if (!res.ok) {
@@ -27,11 +28,9 @@ export default () => {
       ) : (
         <ul>
           {
-            siFloors!.map((siFloor) => (
-              <li key={siFloor.id}>
-                <SiFloorPreview siFloor={siFloor} />
-              </li>
-            ))
+            <li >
+              <SiFloorPreview siFloor={siFloor!} />
+            </li>
           }
         </ul>
       )}

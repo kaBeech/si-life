@@ -7,6 +7,7 @@ import (
   "os"
 
   "github.com/gofiber/fiber/v2"
+  // "github.com/gofiber/fiber/v2/middleware/cors"
   "github.com/joho/godotenv"
   "gorm.io/driver/postgres"
   "gorm.io/gorm"
@@ -23,9 +24,14 @@ var db *gorm.DB
 
 func main() {
   // Load environment variables
-  errGoDotEnv := godotenv.Load()
-  if errGoDotEnv != nil {
-    log.Fatal("Error loading .env file")
+  if os.Getenv("ENV") == "prod" {
+    app.Static("/", "./client/dist")
+  } else {
+    // Load .env file if not in prod
+    errGoDotEnv := godotenv.Load()
+    if errGoDotEnv != nil {
+      log.Fatal("Error loading .env file")
+    }
   }
   PORT := os.Getenv("PORT")
   DB_URL := os.Getenv("DB_URL")
@@ -40,8 +46,20 @@ func main() {
   // Migrate the schema
   db.AutoMigrate(&SiFloor{})
 
+  // Seed the database
+  var initSiFloor SiFloor
+  db.First(&initSiFloor, 1)
+  if (initSiFloor.Error != nil) {
+    db.Create(&SiFloor{Height: 25, Width: 25})
+  }
+
   // Create a new Fiber instance
   app := fiber.New()
+
+  // app.Use(cors.New(cors.Config{
+  //   AllowOrigins: "http://localhost:5173",
+  //   AllowHeaders: "Origin, Content-Type, Accept",
+  // }))
 
   // Routes
   app.Get("/", getHome)
