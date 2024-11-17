@@ -32,7 +32,7 @@ func main() {
   // }))
 
   // Load environment variables
-  if os.Getenv("ENV") != "dev" {
+  if os.Getenv("ENV") == "prod" {
     app.Static("/", "./client/dist")
   } else {
     // Load .env file if not in prod
